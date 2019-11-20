@@ -12,12 +12,12 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
 
 def main():
-    print("oi")
     fp_pickle()
     fp_svm()
     fp_keras()
 
 def fp_pickle():
+    print("\nProcessamento com SVM\n")
     # dirpath = 'dataset_2009' # Excelente. Acurácia alta. Não podemos usar.
     dirpath = 'digitais/index' # Pequeno. Acurácia baixa. Podemos usar.
 
@@ -73,8 +73,11 @@ def fp_svm():
     plt.imshow(x_test[image_index].reshape(372, 312),cmap='gray')
     pred = int(clf.predict(x_test[image_index].reshape(1, -1)))
     print('Indivíduo:', pred)
+    print("Feche a iagem para continuar")
+    plt.show()
 
 def fp_keras():
+    print("\n\nProcessamento com Keras\n")
     # Abre o arquivo
     pkl_file = open('fingerprint_data.pkl', 'rb')
     x_train, x_test, y_train, y_test = pickle.load(pkl_file)
@@ -118,6 +121,8 @@ def fp_keras():
     plt.imshow(x_test[image_index].reshape(372, 312),cmap='gray')
     pred = model.predict(x_test[image_index].reshape(1, 372, 312, 1))
     print('Indivíduo:', pred.argmax())
+    print("Feche a iagem para continuar")
+    plt.show()
 
 if __name__ == "__main__":
     main()

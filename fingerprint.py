@@ -12,9 +12,9 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
 
 def main():
-    #fp_pickle()
+    fp_pickle()
     fp_svm()
-    #fp_keras()
+    fp_keras()
 
 def fp_pickle():
     print("\nProcessamento com SVM\n")

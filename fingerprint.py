@@ -12,9 +12,9 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv2D, Dropout, Flatten, MaxPooling2D
 
 def main():
-    fp_pickle()
+    #fp_pickle()
     fp_svm()
-    fp_keras()
+    #fp_keras()
 
 def fp_pickle():
     print("\nProcessamento com SVM\n")
@@ -37,7 +37,7 @@ def fp_pickle():
 
     X = np.asarray([np.reshape(x, (116064, 1)) for x in X]) # 116064 = 372*312
     y = np.asarray(y)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     fingerprint_data = []
     fingerprint_data.append(X_train)
@@ -45,7 +45,7 @@ def fp_pickle():
     fingerprint_data.append(y_train)
     fingerprint_data.append(y_test)
 
-    pkl_file = open('fingerprint_data.pkl', 'wb')     
+    pkl_file = open('fingerprint_data.pkl', 'wb')
 
     pickle.dump(fingerprint_data, pkl_file)
     pkl_file.close()
@@ -56,6 +56,7 @@ def fp_svm():
 
     x_train = x_train.reshape(x_train.shape[0],372*312)
     x_test = x_test.reshape(x_test.shape[0],372*312)
+
     for str in ['linear', 'poly', 'rbf', 'sigmoid']:
         clf = svm.SVC(kernel=str, gamma='auto') # or gamma='scale'
         clf.fit(x_train, y_train)
@@ -67,13 +68,58 @@ def fp_svm():
     clf = svm.SVC(kernel='linear', gamma='auto') # or gamma='scale'
     clf.fit(x_train, y_train)
 
+    # Validação cruzada kFold
+
+    from sklearn.model_selection import cross_val_score
+
+    scores = cross_val_score(clf, x_train, y_train, cv=4)
+    scores     
+
+    print("Acurácia média + intervalo de confiança de 95%% : %0.2f (+/- %0.2f) %%" % (scores.mean(), scores.std() * 2))
+
+    # Usando pré-processamento
+
+    from sklearn import preprocessing
+
+    scaler = preprocessing.StandardScaler().fit(x_train)
+    x_train_transformed = scaler.transform(x_train)
+    # clf = svm.SVC(C=1).fit(x_train_transformed, y_train)
+    x_test_transformed = scaler.transform(x_test)
+    # clf.score(x_test_transformed, y_test)  
+
+    # Retreinando com os conjuntos pré-processados
+
+    clf = svm.SVC(kernel='linear', gamma='auto') # or gamma='scale'
+    clf.fit(x_train_transformed, y_train)
+    acc = clf.score(x_test_transformed, y_test)
+    print('Nova acurácia =' , acc*100, '%')
+
+    scores = cross_val_score(clf, x_train_transformed, y_train, cv=4)
+    scores  
+
+    print("Nova acurácia média + intervalo de confiança de 95%% : %0.2f (+/- %0.2f) %%" % (scores.mean(), scores.std() * 2))
+
+    # A mesma coisa utilizando pipeline
+
+    from sklearn.pipeline import make_pipeline
+
+    clf = make_pipeline(preprocessing.StandardScaler(), svm.SVC(kernel='linear', gamma='auto'))
+    cross_val_score(clf, x_train, y_train, cv=4)
+
+    print("Nova acurácia média + intervalo de confiança de 95%% : %0.2f (+/- %0.2f) %%" % (scores.mean(), scores.std() * 2))
+
+    # O modelo com os melhores resultados foi o svm com kernel linear sem pré-processamento
+
+    clf = svm.SVC(kernel='linear', gamma='auto') # or gamma='scale'
+    # clf.fit(x_train, y_train)
+    clf.fit(x_train_transformed, y_train)
+
     # Avaliação individual
 
     image_index = 0 
     plt.imshow(x_test[image_index].reshape(372, 312),cmap='gray')
     pred = int(clf.predict(x_test[image_index].reshape(1, -1)))
     print('Indivíduo:', pred)
-    print("Feche a iagem para continuar")
     plt.show()
 
 def fp_keras():
@@ -109,7 +155,7 @@ def fp_keras():
                 metrics=['accuracy'])
     model.summary()
 
-    model.fit(x=x_train,y=y_train, epochs=10)
+    model.fit(x=x_train,y=y_train, epochs=20)
 
     # Avaliação do modelo
     acc = model.evaluate(x_test, y_test)
@@ -117,11 +163,10 @@ def fp_keras():
 
     # Avaliação individual
 
-    image_index = 4
+    image_index = 7
     plt.imshow(x_test[image_index].reshape(372, 312),cmap='gray')
     pred = model.predict(x_test[image_index].reshape(1, 372, 312, 1))
     print('Indivíduo:', pred.argmax())
-    print("Feche a iagem para continuar")
     plt.show()
 
 if __name__ == "__main__":
